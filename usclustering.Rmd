@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Libraries
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+```
+
+#Clustering Function
+```{r}
+#generate dendrogram
+gen_dendro <- function(dataset){
+  distance = dist(dataset)
+  clusters = hclust(distance, method = "average")
+  plot(clusters, labels = state_data$State.Name) #All plots share names
+}
+```
+
+
+# Get Data
+
+```{r}
+state_data <- read.csv('StateStats.csv')
+adj_state_data <- state_data %>%  
+  select(-Predominant.Timezone) %>%
+  #Column below seems inconsistent
+  select(-Number.of.sex.offenders.per.10k.residents) %>%
+  select(-Population)
+
+row.names(adj_state_data) <- adj_state_data[,1]
+adj_state_data <- scale(adj_state_data[, -c(1)])
+```
+
+# Dendrogram
+```{r}
+gen_dendro(adj_state_data)
+```
+# Biplot
+
+```{r}
+results <- prcomp(adj_state_data, scale = TRUE)
+biplot(results, scale = 0, cex=c(0.3, 0.0001), var.axes = FALSE)
+```
+
+# Breakdown
+
+## Only Demographic Characteristics
+
+```{r}
+dem_state_data <- state_data %>%
+  select(Median.age:Single.Population) %>%
+  select(-(X..with.at.least.Bachelor.s.degree:Population.growth.since.2010)) %>%
+  select(-UV.Index) %>%
+  scale()
+```
+
+```{r}
+gen_dendro(dem_state_data)
+```
+
+## Only Climate Characteristics
+
+```{r}
+clim_state_data <- state_data %>%
+  select(Hottest.month.s.avg.high..F.:Average.yearly.windspeed..mph.,UV.Index) %>%
+  scale()
+```
+
+```{r}
+gen_dendro(clim_state_data)
+```
+
+## Only Socioeconomic Characteristics
+```{r}
+se_state_data <- state_data %>%
+  select(-(People.Per.Sq.Mi:Average.yearly.windspeed..mph.)) %>%
+  select(-UV.Index) %>%
+  select(-(X..Democrat:Foreign.Born..)) %>%
+  select(-Median.age) %>%
+  select(-Single.Population) %>%
+  select(-Predominant.Timezone) %>%
+  select(-Number.of.sex.offenders.per.10k.residents) %>%
+  select(-Population) %>%
+  select(-State.Name) %>%
+  scale()
+```
+
+```{r}
+gen_dendro(se_state_data)
+```
+
